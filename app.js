@@ -1,114 +1,109 @@
-const facultySelect = document.getElementById("faculty-select");
-const specialitySelect = document.getElementById("speciality-select");
-const courseSelect = document.getElementById("course-select");
-const tableContainer = document.getElementById("students-table-container");
+const facultySelect = document.getElementById('faculty-select');
+const specialitySelect = document.getElementById('speciality-select');
+const courseSelect = document.getElementById('course-select');
+const studentsContainer = document.getElementById('students-table-container');
+const loader = document.getElementById('loader');
 
-const BASE_URL = "https://iis.bsuir.by/api/v1";
-
-async function fetchJson(url) {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error(`Ошибка запроса ${resp.status}`);
-    return resp.json();
+async function fetchJSON(url) {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Ошибка сети');
+    return res.json();
 }
 
 async function loadFaculties() {
-    const faculties = await fetchJson(`${BASE_URL}/schedule/faculties`);
-    facultySelect.innerHTML = `<option value="">Выберите факультет</option>`;
+    const faculties = await fetchJSON('https://iis.bsuir.by/api/v1/schedule/faculties');
+    facultySelect.innerHTML = '<option value="">Выберите факультет</option>';
     faculties.forEach(f => {
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = f.id;
         opt.textContent = f.text;
         facultySelect.appendChild(opt);
     });
-    specialitySelect.disabled = true;
-    courseSelect.disabled = true;
-    tableContainer.innerHTML = "";
 }
 
 async function loadSpecialities(facultyId) {
-    const specialities = await fetchJson(`${BASE_URL}/rating/specialities?facultyId=${facultyId}`);
-    specialitySelect.innerHTML = `<option value="">Выберите специальность</option>`;
+    specialitySelect.disabled = true;
+    specialitySelect.innerHTML = '<option value="">Загрузка...</option>';
+    const specialities = await fetchJSON(`https://iis.bsuir.by/api/v1/rating/specialities?facultyId=${facultyId}`);
+    specialitySelect.innerHTML = '<option value="">Выберите специальность</option>';
     specialities.forEach(s => {
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = s.id;
         opt.textContent = s.text;
         specialitySelect.appendChild(opt);
     });
     specialitySelect.disabled = false;
-    courseSelect.disabled = true;
-    tableContainer.innerHTML = "";
 }
 
 async function loadCourses(facultyId, specialityId) {
-    const courses = await fetchJson(`${BASE_URL}/rating/courses?facultyId=${facultyId}&specialityId=${specialityId}`);
-    courseSelect.innerHTML = `<option value="">Выберите курс</option>`;
+    courseSelect.disabled = true;
+    courseSelect.innerHTML = '<option value="">Загрузка...</option>';
+    const courses = await fetchJSON(`https://iis.bsuir.by/api/v1/rating/courses?facultyId=${facultyId}&specialityId=${specialityId}`);
+    courseSelect.innerHTML = '<option value="">Выберите курс</option>';
     courses.forEach(c => {
-        const opt = document.createElement("option");
+        const opt = document.createElement('option');
         opt.value = c.course;
-        opt.textContent = `Курс ${c.course}`;
+        opt.textContent = c.course;
         courseSelect.appendChild(opt);
     });
     courseSelect.disabled = false;
-    tableContainer.innerHTML = "";
 }
 
-async function loadStudents(specialityId, courseNum) {
-    const students = await fetchJson(`${BASE_URL}/rating?sdef=${specialityId}&course=${courseNum}`);
-    const html = `
-        <table>
-            <thead>
-                <tr>
-                    <th>Студенческий</th>
-                    <th>Средний балл</th>
-                    <th>Часы</th>
-                    <th>Сдвиг</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${students.map(s => `
-                    <tr>
-                        <td>${s.studentCardNumber}</td>
-                        <td>${s.average.toFixed(2)}</td>
-                        <td>${s.hours.toFixed(2)}</td>
-                        <td>${s.averageShift.toFixed(2)}</td>
-                    </tr>
-                `).join("")}
-            </tbody>
-        </table>
-    `;
-    tableContainer.innerHTML = html;
+async function loadStudents(facultyId, specialityId, course) {
+    loader.classList.remove('hidden');
+    studentsContainer.innerHTML = '';
+    const students = await fetchJSON(`https://iis.bsuir.by/api/v1/rating?sdef=${specialityId}&course=${course}`);
+    loader.classList.add('hidden');
+    if (!students.length) {
+        studentsContainer.textContent = 'Студенты не найдены';
+        return;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    thead.innerHTML = '<tr><th>Студ. билет</th><th>Средний балл</th><th>Часы</th><th>Сдвиг</th></tr>';
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    students.forEach(s => {
+        const row = document.createElement('tr');
+        const shift = parseFloat(s.averageShift.toFixed(2));
+        row.innerHTML = `
+            <td>${s.studentCardNumber}</td>
+            <td>${parseFloat(s.average.toFixed(2))}</td>
+            <td>${parseFloat(s.hours.toFixed(2))}</td>
+            <td class="${shift > 0 ? 'shift-up' : shift < 0 ? 'shift-down' : ''}">
+                ${shift > 0 ? '▲ ' : shift < 0 ? '▼ ' : ''}${Math.abs(shift)}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    studentsContainer.appendChild(table);
 }
 
-facultySelect.addEventListener("change", () => {
-    const facultyId = facultySelect.value;
-    if (!facultyId) {
-        specialitySelect.disabled = true;
-        courseSelect.disabled = true;
-        tableContainer.innerHTML = "";
-        return;
-    }
-    loadSpecialities(facultyId);
+facultySelect.addEventListener('change', async () => {
+    specialitySelect.disabled = true;
+    specialitySelect.innerHTML = '<option value="">Выберите специальность</option>';
+    courseSelect.disabled = true;
+    courseSelect.innerHTML = '<option value="">Выберите курс</option>';
+    studentsContainer.innerHTML = '';
+    if (!facultySelect.value) return;
+    await loadSpecialities(facultySelect.value);
 });
 
-specialitySelect.addEventListener("change", () => {
-    const facultyId = facultySelect.value;
-    const specialityId = specialitySelect.value;
-    if (!specialityId) {
-        courseSelect.disabled = true;
-        tableContainer.innerHTML = "";
-        return;
-    }
-    loadCourses(facultyId, specialityId);
+specialitySelect.addEventListener('change', async () => {
+    courseSelect.disabled = true;
+    courseSelect.innerHTML = '<option value="">Выберите курс</option>';
+    studentsContainer.innerHTML = '';
+    if (!specialitySelect.value) return;
+    await loadCourses(facultySelect.value, specialitySelect.value);
 });
 
-courseSelect.addEventListener("change", () => {
-    const specialityId = specialitySelect.value;
-    const courseNum = courseSelect.value;
-    if (!courseNum) {
-        tableContainer.innerHTML = "";
-        return;
-    }
-    loadStudents(specialityId, courseNum);
+courseSelect.addEventListener('change', async () => {
+    studentsContainer.innerHTML = '';
+    if (!courseSelect.value) return;
+    await loadStudents(facultySelect.value, specialitySelect.value, courseSelect.value);
 });
 
 loadFaculties();
