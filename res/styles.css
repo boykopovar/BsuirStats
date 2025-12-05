@@ -36,6 +36,48 @@ body {
     box-shadow: 0 4px 12px var(--shadow);
 }
 
+
+.button {
+    padding: calc(var(--spacer) * var(--multiply-index) * 2)
+             calc(var(--spacer) * var(--multiply-index) * 3);
+    background: var(--background-button);
+    color: var(--white);
+    border: 1px solid var(--background-button);
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, opacity .15s ease;
+    box-shadow: 0 3px 6px var(--shadow);
+}
+
+.button:hover {
+    background: var(--background-button-hover);
+    border-color: var(--border-button-hover);
+}
+
+.button:active {
+    opacity: .85;
+    box-shadow: 0 2px 4px var(--shadow);
+}
+
+.button:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.18rem var(--button-focus);
+}
+
+.button:focus:not(:focus-visible) {
+    box-shadow: none;
+}
+
+.button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+
+
 h1 {
     text-align: center;
     margin-bottom: 2rem;

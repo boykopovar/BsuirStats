@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>Рейтинг БГУИР</title>
     <link rel="icon" href="https://iis.bsuir.by/favicon.ico">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="res/styles.css">
 </head>
 <body>
     <div class="container">
@@ -26,9 +26,13 @@
                 <option value="">Предмет</option>
             </select>
             <select id="lesson-type-select" disabled>
-                <option value="">Тип занятия (необязательно)</option>
+                <option value="">Тип</option>
             </select>
-            <button id="apply-btn" disabled>Применить</button>
+            <select id="ranking-mode">
+                <option value="average" selected>Средний балл</option>
+                <option value="sum">Сумма оценок</option>
+            </select>
+            <button id="apply-btn" class="button" disabled>Применить</button>
         </div>
 
         <div id="loader" class="hidden"></div>

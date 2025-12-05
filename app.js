@@ -7,6 +7,7 @@ const filterRow = document.getElementById('filter-row')
 const subjectSelect = document.getElementById('subject-select')
 const lessonTypeSelect = document.getElementById('lesson-type-select')
 const applyBtn = document.getElementById('apply-btn')
+const rankingMode = document.getElementById('ranking-mode')
 const BASE = 'https://iis.bsuir.by/api/v1'
 let currentStudents = []
 let subjectToTypes = new Map()
@@ -28,15 +29,36 @@ async function loadFaculties() {
     })
 }
 
+function formatSpeciality(raw) {
+    // "(1-40 02 01) ВМСиС (1 ступень дневная)" => "ВМСиС 1ст дн (1-40 02 01)"
+    if (!raw) return raw
+    try {
+        const r = /^\s*\(([^)]+)\)\s+(.+?)\s+\((\d+)\s+ступень\s+([^)]+)\)\s*$/i
+        const m = raw.match(r)
+        if (!m) return raw
+        let code = m[1].trim()
+        let name = m[2].trim()
+        let step = m[3].trim()
+        let type = m[4].trim().toLowerCase()
+        if (type.includes('днев')) type = 'дн'
+        else if (type.includes('заоч')) type = 'заоч'
+        else if (type.includes('дистан')) type = 'дист'
+        else type = type.replace(/\s+/g, ' ')
+        return `${name} ${step}ст ${type} (${code})`
+    } catch (e) {
+        return raw
+    }
+}
+
 async function loadSpecialities(facultyId) {
     specialitySelect.disabled = true
-    specialitySelect.innerHTML = '<option value="">Загрузка...</option>'
+    //specialitySelect.innerHTML = '<option value="">Загрузка...</option>'
     const data = await fetchJSON(`${BASE}/rating/specialities?facultyId=${facultyId}`)
     specialitySelect.innerHTML = '<option value="">Выберите специальность</option>'
     data.forEach(s => {
         const opt = document.createElement('option')
         opt.value = s.id
-        opt.textContent = s.text
+        opt.textContent = formatSpeciality(s.text)
         specialitySelect.appendChild(opt)
     })
     specialitySelect.disabled = false
@@ -44,7 +66,7 @@ async function loadSpecialities(facultyId) {
 
 async function loadCourses(facultyId, specialityId) {
     courseSelect.disabled = true
-    courseSelect.innerHTML = '<option value="">Загрузка...</option>'
+    //courseSelect.innerHTML = '<option value="">Загрузка...</option>'
     const data = await fetchJSON(`${BASE}/rating/courses?facultyId=${facultyId}&specialityId=${specialityId}`)
     courseSelect.innerHTML = '<option value="">Выберите курс</option>'
     data.forEach(c => {
@@ -99,7 +121,7 @@ async function loadStudents(facultyId, specialityId, course) {
     studentsContainer.innerHTML = ''
     filterRow.classList.add('hidden')
     subjectSelect.innerHTML = '<option value="">Предмет</option>'
-    lessonTypeSelect.innerHTML = '<option value="">Тип занятия (необязательно)</option>'
+    lessonTypeSelect.innerHTML = '<option value="">Тип</option>'
     subjectSelect.disabled = true
     lessonTypeSelect.disabled = true
     applyBtn.disabled = true
@@ -160,12 +182,13 @@ courseSelect.addEventListener('change', async () => {
 
 subjectSelect.addEventListener('change', () => {
     const sub = subjectSelect.value
-    lessonTypeSelect.innerHTML = '<option value="">Тип занятия (необязательно)</option>'
+    lessonTypeSelect.innerHTML = '<option value="">Тип</option>'
     lessonTypeSelect.disabled = true
     applyBtn.disabled = true
     if (!sub) return
     const types = Array.from(subjectToTypes.get(sub) || []).sort()
     if (types.length) {
+        lessonTypeSelect.innerHTML = '<option value="">Тип</option>'
         types.forEach(t => {
             const opt = document.createElement('option')
             opt.value = t
@@ -180,6 +203,7 @@ subjectSelect.addEventListener('change', () => {
 applyBtn.addEventListener('click', async () => {
     const subject = subjectSelect.value
     const lessonType = lessonTypeSelect.value || null
+    const mode = rankingMode.value || 'average'
     if (!subject) return
     showLoader()
     studentsContainer.innerHTML = ''
@@ -196,10 +220,30 @@ applyBtn.addEventListener('click', async () => {
                 if (!Number.isNaN(n)) collected.push(n)
             })
         })
-        const avg = collected.length ? collected.reduce((a,b)=>a+b,0)/collected.length : 0
-        marksMap.push({ studentCardNumber: d.studentCardNumber, marks: collected, average: avg })
+        const sum = collected.length ? collected.reduce((a, b) => a + b, 0) : 0
+        const avg = collected.length ? sum / collected.length : 0
+        marksMap.push({ studentCardNumber: d.studentCardNumber, marks: collected, average: avg, sum })
     })
-    const sorted = marksMap.sort((a,b) => b.average - a.average)
+    const eps = 1e-9
+    const sorted = marksMap.sort((a, b) => {
+        if (mode === 'average') {
+            const diff = b.average - a.average
+            if (Math.abs(diff) > eps) return diff
+            const diffCount = b.marks.length - a.marks.length
+            if (diffCount !== 0) return diffCount
+            const diffSum = b.sum - a.sum
+            if (Math.abs(diffSum) > eps) return diffSum
+            return a.studentCardNumber.toString().localeCompare(b.studentCardNumber.toString())
+        } else {
+            const diff = b.sum - a.sum
+            if (Math.abs(diff) > eps) return diff
+            const diffAvg = b.average - a.average
+            if (Math.abs(diffAvg) > eps) return diffAvg
+            const diffCount = b.marks.length - a.marks.length
+            if (diffCount !== 0) return diffCount
+            return a.studentCardNumber.toString().localeCompare(b.studentCardNumber.toString())
+        }
+    })
     hideLoader()
     if (sorted.length === 0) {
         studentsContainer.textContent = 'Результатов нет'
@@ -207,13 +251,13 @@ applyBtn.addEventListener('click', async () => {
     }
     const table = document.createElement('table')
     const thead = document.createElement('thead')
-    thead.innerHTML = '<tr><th>Место</th><th>Студ. билет</th><th>Средний</th><th>Кол-во оценок</th><th>Оценки</th></tr>'
+    thead.innerHTML = '<tr><th>Место</th><th>Студ. билет</th><th>Средний</th><th>Сумма</th><th>Кол-во оценок</th><th>Оценки</th></tr>'
     table.appendChild(thead)
     const tbody = document.createElement('tbody')
     sorted.forEach((s, i) => {
         const tr = document.createElement('tr')
         const marksText = s.marks.length ? s.marks.join(', ') : '—'
-        tr.innerHTML = `<td>${i+1}</td><td>${s.studentCardNumber}</td><td>${s.average.toFixed(2)}</td><td>${s.marks.length}</td><td>${marksText}</td>`
+        tr.innerHTML = `<td>${i + 1}</td><td>${s.studentCardNumber}</td><td>${s.average.toFixed(2)}</td><td>${s.sum.toFixed(2)}</td><td>${s.marks.length}</td><td>${marksText}</td>`
         tbody.appendChild(tr)
     })
     table.appendChild(tbody)
