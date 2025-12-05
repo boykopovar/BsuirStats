@@ -329,4 +329,28 @@ h1 {
     .text-input {
         width: 100%;
     }
+
+    .header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .container {
+        max-width: 100%;
+        margin: 1rem;
+        padding: 1rem;
+    }
+
+    #students-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+#students-table-container table {
+    width: 100%;
+    min-width: 400px; 
+    border-collapse: collapse;
+}
+
 }
