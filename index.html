@@ -5,11 +5,18 @@
     <title>Рейтинг БГУИР</title>
     <link rel="icon" href="https://iis.bsuir.by/favicon.ico">
     <link rel="stylesheet" href="res/styles.css">
+    <style>
+        .top-mark { background: linear-gradient(90deg, #e6f7ea, #dff0d8); }
+        .top-controls { display:flex; gap:0.5rem; align-items:center; margin-top:1rem; justify-content:center; flex-wrap:wrap; }
+        .top-controls input[type="number"]{ padding:6px 8px; border-radius:6px; border:1px solid var(--form-border); }
+        .top-controls .small-btn { padding:6px 10px; border-radius:6px; border:1px solid var(--background-button); background:var(--background-button); color:var(--white); cursor:pointer; }
+        .top-controls .small-btn[disabled]{ opacity:.6; cursor:not-allowed }
+    </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 Статистика студентов БГУИР</h1>
-        <div class="selectors">
+        <div class="selectors flex-row-full">
             <select id="faculty-select">
                 <option value="">Выберите факультет</option>
             </select>
@@ -21,7 +28,7 @@
             </select>
         </div>
 
-        <div id="filter-row" class="hidden">
+        <div id="filter-row" class="hidden filter-row-flex">
             <select id="subject-select" disabled>
                 <option value="">Предмет</option>
             </select>
@@ -34,6 +41,8 @@
             </select>
             <button id="apply-btn" class="button" disabled>Применить</button>
         </div>
+
+        <div id="top-controls" class="hidden"></div>
 
         <div id="loader" class="hidden"></div>
         <div id="students-table-container"></div>

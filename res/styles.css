@@ -36,7 +36,6 @@ body {
     box-shadow: 0 4px 12px var(--shadow);
 }
 
-
 .button {
     padding: calc(var(--spacer) * var(--multiply-index) * 2)
              calc(var(--spacer) * var(--multiply-index) * 3);
@@ -76,8 +75,6 @@ body {
     box-shadow: none;
 }
 
-
-
 h1 {
     text-align: center;
     margin-bottom: 2rem;
@@ -116,6 +113,68 @@ select:focus {
 
 #course-select {
     flex: 1;
+}
+
+.filter-row-flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-row-flex select,
+.filter-row-flex button {
+    flex: 1 1 0;
+}
+
+.flex-row-full {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.flex-row-full select,
+.flex-row-full button {
+    flex: 1 1 0;
+}
+
+.top-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1rem;
+    font-size: 1rem;
+}
+
+.top-controls input[type="number"] {
+    flex: 1 1 80px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--form-border);
+    font-size: 1rem;
+    min-width: 60px;
+}
+
+.top-controls .small-btn {
+    flex: 1 1 100px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--background-button);
+    background: var(--background-button);
+    color: var(--white);
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: center;
+}
+
+.top-controls .small-btn[disabled] {
+    opacity: .6;
+    cursor: not-allowed;
 }
 
 table {
@@ -161,7 +220,62 @@ tr:nth-child(even) {
     display: none;
 }
 
+.top-mark {
+    background: linear-gradient(90deg, #e6f7ea, #dff0d8);
+}
+
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+
+
+@media (max-width: 768px) {
+    #filter-row.flex-row-full {
+        flex-direction: column;
+    }
+
+    #filter-row select,
+    #filter-row button {
+        flex: 1 1 100%;
+    }
+
+    .top-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .top-controls input[type="number"] {
+        flex: 1 1 100%;
+    }
+
+    .top-controls .small-btn {
+        flex: 1 1 100%;
+    }
+
+    .top-controls .range-row {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
+
+    .top-controls .range-row input[type="number"] {
+        flex: 1 1 50%;
+    }
+
+    .top-controls .apply-btn-wrapper {
+        width: 100%;
+    }
+
+    .top-controls .apply-btn-wrapper button {
+        width: 100%;
+    }
+
+    .percent-wrapper {
+        width: 100%;
+    }
+    .text-input {
+        width: 100%;
+    }
 }
