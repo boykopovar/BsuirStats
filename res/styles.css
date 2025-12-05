@@ -229,7 +229,58 @@ tr:nth-child(even) {
     100% { transform: rotate(360deg); }
 }
 
+.percent-wrapper, .apply-btn-wrapper {
+    width: 100%;
+}
 
+.range-row {
+    width: 100%;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.text-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.top-controls input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+h1 {
+    margin: 0;
+    text-align: center;
+}
+
+.share-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.share-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.apply-btn-wrapper{
+    width: 100% !important;
+}
+
+.button{
+    width: 100% !important;
+}
 
 @media (max-width: 768px) {
     #filter-row.flex-row-full {

@@ -9,6 +9,7 @@ const lessonTypeSelect = document.getElementById('lesson-type-select')
 const applyBtn = document.getElementById('apply-btn')
 const rankingMode = document.getElementById('ranking-mode')
 const topControls = document.getElementById('top-controls')
+const shareBtn = document.getElementById('share-btn')
 const BASE = 'https://iis.bsuir.by/api/v1'
 
 let currentStudents = []
@@ -205,12 +206,14 @@ function buildTopControlsForList(list) {
             if (matching[i] && matching[i].row) matching[i].row.classList.add('top-mark')
         }
     })
+    return { percentInput, fromInput, toInput, btn }
 }
 
 
 
 function renderStudentsTable(list) {
     studentsContainer.innerHTML = ''
+    shareBtn.disabled = true
     if (!list || list.length === 0) {
         studentsContainer.textContent = 'Студенты не найдены'
         clearTopControls()
@@ -237,6 +240,7 @@ function renderStudentsTable(list) {
     studentsContainer.appendChild(table)
 
     buildTopControlsForList(list)
+    shareBtn.disabled = false
 }
 
 
@@ -250,6 +254,7 @@ async function loadStudents(facultyId, specialityId, course) {
     lessonTypeSelect.disabled = true
     applyBtn.disabled = true
     clearTopControls()
+    shareBtn.disabled = true
 
     const data = await fetchJSON(`${BASE}/rating?sdef=${specialityId}&course=${course}`)
     hideLoader()
@@ -296,6 +301,7 @@ facultySelect.addEventListener('change', async () => {
     studentsContainer.innerHTML = ''
     filterRow.classList.add('hidden')
     clearTopControls()
+    shareBtn.disabled = true
     if (!facultySelect.value) return
     await loadSpecialities(facultySelect.value)
 })
@@ -307,6 +313,7 @@ specialitySelect.addEventListener('change', async () => {
     studentsContainer.innerHTML = ''
     filterRow.classList.add('hidden')
     clearTopControls()
+    shareBtn.disabled = true
     if (!specialitySelect.value) return
     await loadCourses(facultySelect.value, specialitySelect.value)
 })
@@ -316,6 +323,7 @@ courseSelect.addEventListener('change', async () => {
     studentsContainer.innerHTML = ''
     filterRow.classList.add('hidden')
     clearTopControls()
+    shareBtn.disabled = true
     if (!courseSelect.value) return
     await loadStudents(facultySelect.value, specialitySelect.value, courseSelect.value)
 })
@@ -351,6 +359,7 @@ applyBtn.addEventListener('click', async () => {
     showLoader()
     studentsContainer.innerHTML = ''
     clearTopControls()
+    shareBtn.disabled = true
 
     const tasks = currentStudents.map(s => fetchJSON(`${BASE}/rating/studentRating?studentCardNumber=${s.studentCardNumber}`)
         .then(d => ({ studentCardNumber: s.studentCardNumber, lessons: Array.isArray(d.lessons) ? d.lessons : [] }))
@@ -418,7 +427,86 @@ applyBtn.addEventListener('click', async () => {
     table.appendChild(tbody)
     studentsContainer.appendChild(table)
     buildTopControlsForList(sorted)
+    shareBtn.disabled = false
 })
 
 
-loadFaculties()
+async function initFromParams() {
+    const params = new URLSearchParams(location.search)
+    const fac = params.get('faculty')
+    if (!fac) return
+    facultySelect.value = fac
+    await loadSpecialities(fac)
+    const spec = params.get('speciality')
+    if (!spec) return
+    specialitySelect.value = spec
+    await loadCourses(fac, spec)
+    const crs = params.get('course')
+    if (!crs) return
+    courseSelect.value = crs
+    await loadStudents(fac, spec, crs)
+    const sub = params.get('subject')
+    if (sub) {
+        await new Promise(resolve => setTimeout(resolve, 500))
+        subjectSelect.value = sub
+        subjectSelect.dispatchEvent(new Event('change'))
+        const typ = params.get('type')
+        if (typ) lessonTypeSelect.value = typ
+        const mod = params.get('mode')
+        if (mod) rankingMode.value = mod
+        if (sub) {
+            applyBtn.click()
+            await new Promise(resolve => setTimeout(resolve, 1000))
+            const percent = params.get('percent')
+            const from = params.get('from')
+            const to = params.get('to')
+            if (percent || from || to) {
+                const topPercent = document.getElementById('top-percent')
+                const rangeFrom = document.getElementById('range-from')
+                const rangeTo = document.getElementById('range-to')
+                const topBtn = document.getElementById('top-apply-btn')
+                if (topPercent) topPercent.value = percent || ''
+                if (rangeFrom) rangeFrom.value = from || ''
+                if (rangeTo) rangeTo.value = to || ''
+                if (topBtn && (percent || from || to)) topBtn.click()
+            }
+        }
+    } else {
+        const percent = params.get('percent')
+        const from = params.get('from')
+        const to = params.get('to')
+        if (percent || from || to) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+            const topPercent = document.getElementById('top-percent')
+            const rangeFrom = document.getElementById('range-from')
+            const rangeTo = document.getElementById('range-to')
+            const topBtn = document.getElementById('top-apply-btn')
+            if (topPercent) topPercent.value = percent || ''
+            if (rangeFrom) rangeFrom.value = from || ''
+            if (rangeTo) rangeTo.value = to || ''
+            if (topBtn && (percent || from || to)) topBtn.click()
+        }
+    }
+}
+
+loadFaculties().then(initFromParams)
+
+shareBtn.addEventListener('click', () => {
+    if (shareBtn.disabled) return
+    const params = new URLSearchParams()
+    if (facultySelect.value) params.set('faculty', facultySelect.value)
+    if (specialitySelect.value) params.set('speciality', specialitySelect.value)
+    if (courseSelect.value) params.set('course', courseSelect.value)
+    if (subjectSelect.value) params.set('subject', subjectSelect.value)
+    if (lessonTypeSelect.value) params.set('type', lessonTypeSelect.value)
+    if (rankingMode.value) params.set('mode', rankingMode.value)
+    const topPercent = document.getElementById('top-percent')
+    const rangeFrom = document.getElementById('range-from')
+    const rangeTo = document.getElementById('range-to')
+    if (topPercent && topPercent.value) params.set('percent', topPercent.value)
+    if (rangeFrom && rangeFrom.value) params.set('from', rangeFrom.value)
+    if (rangeTo && rangeTo.value) params.set('to', rangeTo.value)
+    const currentUrl = new URL(location.href)
+    currentUrl.search = params.toString()
+    navigator.clipboard.writeText(currentUrl.toString())
+})
